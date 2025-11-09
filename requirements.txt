@@ -1,0 +1,10 @@
+django
+gunicorn
+dj-database-url
+psycopg2-binary
+django-cors-headers
+djangorestframework
+djangorestframework-simplejwt
+google-generativeai
+python-dotenv
+xhtml2pdf

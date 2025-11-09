@@ -7,7 +7,8 @@ from .serializers import DeCuongSerializer, UserSerializer, HocVienSerializer
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
 from django.shortcuts import render
-
+import os
+from django.conf import settings
 # Thêm các import cho AI
 import google.generativeai as genai
 from django.conf import settings
@@ -100,6 +101,7 @@ def download_pdf_view(request):
             'khung_ly_thuyet': de_cuong.khung_ly_thuyet,
             'thiet_ke_va_to_chuc': de_cuong.thiet_ke_va_to_chuc,
             'thuc_nghiem': de_cuong.thuc_nghiem,
+            'font_path': f'file://{os.path.join(settings.BASE_DIR, "static", "fonts", "DejaVuSans.ttf")}',
         }
 
         # 3. Render HTML từ template

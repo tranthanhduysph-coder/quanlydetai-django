@@ -10,6 +10,7 @@
             --secondary-color: #6c757d;
             --success-color: #28a745;
             --danger-color: #dc3545;
+            --warning-color: #ffc107;
             --light-color: #f8f9fa;
             --dark-color: #343a40;
             --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -56,6 +57,7 @@
         .header-controls {
             display: flex;
             gap: 10px;
+            align-items: center;
         }
         .main-content {
             padding: 1.5rem;
@@ -103,6 +105,10 @@
         .btn:hover {
             opacity: 0.9;
         }
+        .btn:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+        }
         .btn-logout {
             background-color: var(--danger-color);
             border-color: var(--danger-color);
@@ -110,6 +116,11 @@
         .btn-save {
             background-color: var(--success-color);
             border-color: var(--success-color);
+        }
+        .btn-submit-final {
+            background-color: var(--warning-color);
+            border-color: var(--warning-color);
+            color: var(--dark-color);
         }
         .btn-ai {
             background-color: #6f42c1; /* Màu tím */
@@ -134,6 +145,25 @@
             color: var(--secondary-color);
             margin-left: 10px;
         }
+        .form-controls {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 10px;
+            border-top: 1px solid #eee; 
+            padding-top: 1.5rem;
+        }
+        #current-status {
+            margin-right: auto; /* Đẩy trạng thái sang trái */
+            font-weight: 600;
+            font-size: 0.9rem;
+            padding: 0.5rem 1rem;
+            border-radius: var(--border-radius);
+        }
+        #current-status.ban_nhap { background-color: #e2e3e5; color: #5a6268; }
+        #current-status.da_nop { background-color: #d4edda; color: #155724; }
+        #current-status.can_chinh_sua { background-color: #fff3cd; color: #856404; }
+        #current-status.da_duyet { background-color: #cce5ff; color: #004085; }
 
         /* --- GIAO DIỆN ĐĂNG NHẬP / ĐĂNG KÝ --- */
         .auth-container {
@@ -327,22 +357,34 @@
 
                     <div class="form-section">
                         <h2>Chương 1: Cơ sở lý luận và thực tiễn (Khung lý thuyết)</h2>
-                        <textarea id="khung-ly-thuyet" placeholder="Nhập nội dung..."></textarea>
+                        <div class="ai-suggestion-box">
+                            <textarea id="khung-ly-thuyet" placeholder="Nhập nội dung..."></textarea>
+                            <button type="button" id="btn-ai-khunglythuyet" class="btn btn-ai">🤖 Gợi ý AI</button>
+                        </div>
                     </div>
 
                     <div class="form-section">
                         <h2>Chương 2: Thiết kế và Tổ chức Dạy học</h2>
-                        <textarea id="thiet-ke-va-to-chuc" placeholder="Nhập nội dung..."></textarea>
+                        <div class="ai-suggestion-box">
+                            <textarea id="thiet-ke-va-to-chuc" placeholder="Nhập nội dung..."></textarea>
+                            <button type="button" id="btn-ai-thietke" class="btn btn-ai">🤖 Gợi ý AI</button>
+                        </div>
                     </div>
                     
                     <div class="form-section">
                         <h2>Chương 3: Thực nghiệm Sư phạm</h2>
-                        <textarea id="thuc-nghiem" placeholder="Nhập nội dung..."></textarea>
+                        <div class="ai-suggestion-box">
+                            <textarea id="thuc-nghiem" placeholder="Nhập nội dung..."></textarea>
+                            <button type="button" id="btn-ai-thucnghiem" class="btn btn-ai">🤖 Gợi ý AI</button>
+                        </div>
                     </div>
 
-                    <div class="form-controls" style="text-align: right; border-top: 1px solid #eee; padding-top: 1.5rem;">
-                        <button type="button" id="btn-download-pdf" class="btn btn-download">📄 Download (PDF)</button>
-                        <button type="button" id="btn-save" class="btn btn-save">💾 Lưu thay đổi</button>
+                    <div class="form-controls">
+                        <span id="current-status"></span>
+                        
+                        <button type="button" id="btn-download-pdf" class="btn btn-download">📄 Tải PDF</button>
+                        <button type="button" id="btn-save-draft" class="btn btn-save">💾 Lưu nháp</button>
+                        <button type="button" id="btn-submit-final" class="btn btn-submit-final">📤 Nộp bài</button>
                         <span id="save-status"></span>
                     </div>
                 </form>
@@ -373,8 +415,7 @@
 
     <script>
         // === CÀI ĐẶT CHUNG ===
-        // API_URL đã được sửa để chạy trên production
-        const API_URL = '/api'; 
+        const API_URL = '/api'; // Dùng đường dẫn tương đối
 
         // Lấy các element
         const appView = document.getElementById('app');
@@ -392,8 +433,16 @@
 
         // Nút
         const btnLogout = document.getElementById('btn-logout');
-        const btnSave = document.getElementById('btn-save');
+        const btnSaveDraft = document.getElementById('btn-save-draft');
+        const btnSubmitFinal = document.getElementById('btn-submit-final');
+        const btnDownloadPDF = document.getElementById('btn-download-pdf');
+        
+        // Nút AI (Sửa lỗi: Thêm 3 nút mới)
         const btnAiLyDo = document.getElementById('btn-ai-lydo');
+        const btnAiKhungLyThuyet = document.getElementById('btn-ai-khunglythuyet');
+        const btnAiThietKe = document.getElementById('btn-ai-thietke');
+        const btnAiThucNghiem = document.getElementById('btn-ai-thucnghiem');
+
         const showLoginLink = document.getElementById('show-login');
         const showRegisterLink = document.getElementById('show-register');
 
@@ -404,6 +453,7 @@
         const elThietKe = document.getElementById('thiet-ke-va-to-chuc');
         const elThucNghiem = document.getElementById('thuc-nghiem');
         const saveStatus = document.getElementById('save-status');
+        const currentStatus = document.getElementById('current-status');
 
         // Modal
         const aiModal = document.getElementById('aiModal');
@@ -538,27 +588,59 @@
                     elKhungLyThuyet.value = data.khung_ly_thuyet || '';
                     elThietKe.value = data.thiet_ke_va_to_chuc || '';
                     elThucNghiem.value = data.thuc_nghiem || '';
+                    
+                    // Sửa lỗi: Thêm code hiển thị trạng thái
+                    updateStatusUI(data.trang_thai);
                 } else {
                     console.error('Không thể tải đề cương.');
-                    // Nếu lỗi 404 (chưa có đề cương), không làm gì cả, form sẽ trống
                 }
             } catch (err) {
                 console.error('Lỗi tải đề cương:', err);
             }
         }
+        
+        // Hàm cập nhật giao diện trạng thái
+        function updateStatusUI(status) {
+            const statusMap = {
+                'ban_nhap': 'Trạng thái: Bản nháp',
+                'da_nop': 'Trạng thái: Đã nộp (Chờ duyệt)',
+                'can_chinh_sua': 'Trạng thái: Cần chỉnh sửa',
+                'da_duyet': 'Trạng thái: Đã duyệt'
+            };
+            currentStatus.textContent = statusMap[status] || 'Trạng thái: Bản nháp';
+            currentStatus.className = status; // Gán class để đổi màu
+            
+            // Khóa form nếu đã nộp hoặc đã duyệt
+            const isLocked = (status === 'da_nop' || status === 'da_duyet');
+            const allInputs = decuongForm.querySelectorAll('textarea, input, button');
+            allInputs.forEach(input => {
+                // Không khóa các nút quan trọng
+                if (input.id !== 'btn-logout' && input.id !== 'btn-download-pdf') {
+                    input.disabled = isLocked;
+                }
+            });
+
+            if (isLocked) {
+                saveStatus.textContent = "Đã nộp, không thể sửa.";
+            } else {
+                saveStatus.textContent = "";
+            }
+        }
 
         // --- 6. LƯU DỮ LIỆU ĐỀ CƯƠNG (POST) ---
         let saveTimeout;
-        btnSave.addEventListener('click', async () => {
+        // Gộp hàm lưu và nộp bài
+        async function saveDeCuong(status = 'ban_nhap') {
             clearTimeout(saveTimeout);
             saveStatus.textContent = 'Đang lưu...';
-
+            
             const data = {
                 ten_de_tai: elTenDeTai.value,
                 ly_do_chon_de_tai: elLyDo.value,
                 khung_ly_thuyet: elKhungLyThuyet.value,
                 thiet_ke_va_to_chuc: elThietKe.value,
-                thuc_nghiem: elThucNghiem.value
+                thuc_nghiem: elThucNghiem.value,
+                trang_thai: status // Gửi cả trạng thái
             };
 
             try {
@@ -568,7 +650,9 @@
                 });
                 
                 if (response.ok) {
-                    saveStatus.textContent = 'Đã lưu!';
+                    const responseData = await response.json();
+                    saveStatus.textContent = (status === 'da_nop') ? 'Đã nộp bài!' : 'Đã lưu!';
+                    updateStatusUI(responseData.trang_thai); // Cập nhật UI với trạng thái mới
                 } else {
                     saveStatus.textContent = 'Lỗi! Không thể lưu.';
                 }
@@ -579,9 +663,19 @@
             saveTimeout = setTimeout(() => {
                 saveStatus.textContent = '';
             }, 3000);
+        }
+        
+        // Gán sự kiện cho các nút lưu
+        btnSaveDraft.addEventListener('click', () => saveDeCuong('ban_nhap'));
+        
+        btnSubmitFinal.addEventListener('click', () => {
+            if (confirm('Bạn có chắc chắn muốn NỘP BÀI không? Sau khi nộp, bạn sẽ không thể chỉnh sửa.')) {
+                saveDeCuong('da_nop');
+            }
         });
 
         // --- 7. GỌI Ý AI ---
+        // Sửa lỗi: Gán sự kiện cho cả 4 nút
         btnAiLyDo.addEventListener('click', () => {
             const prompt = elLyDo.value;
             if (prompt.length < 50) {
@@ -590,6 +684,34 @@
             }
             getAISuggestion(prompt);
         });
+
+        btnAiKhungLyThuyet.addEventListener('click', () => {
+            const prompt = elKhungLyThuyet.value;
+            if (prompt.length < 50) {
+                alert('Bạn cần viết ít nhất 50 ký tự để AI có thể đưa ra gợi ý tốt.');
+                return;
+            }
+            getAISuggestion(prompt);
+        });
+
+        btnAiThietKe.addEventListener('click', () => {
+            const prompt = elThietKe.value;
+            if (prompt.length < 50) {
+                alert('Bạn cần viết ít nhất 50 ký tự để AI có thể đưa ra gợi ý tốt.');
+                return;
+            }
+            getAISuggestion(prompt);
+        });
+
+        btnAiThucNghiem.addEventListener('click', () => {
+            const prompt = elThucNghiem.value;
+            if (prompt.length < 50) {
+                alert('Bạn cần viết ít nhất 50 ký tự để AI có thể đưa ra gợi ý tốt.');
+                return;
+            }
+            getAISuggestion(prompt);
+        });
+
 
         async function getAISuggestion(prompt) {
             showModal(true); // Hiển thị loading
@@ -640,7 +762,7 @@
         }
         
         // --- 9. XỬ LÝ DOWNLOAD PDF ---
-        document.getElementById('btn-download-pdf').addEventListener('click', async () => {
+        btnDownloadPDF.addEventListener('click', async () => {
             alert('Đang tạo tệp PDF, việc này có thể mất vài giây...');
             
             try {

@@ -18,7 +18,6 @@ from django.conf import settings
 # ... (các import hiện có)
 from django.template.loader import get_template
 from django.http import HttpResponse
-from xhtml2pdf import pisa
 from io import BytesIO
 # --- API Đăng ký ---
 @api_view(['POST'])

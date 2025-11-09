@@ -9,6 +9,9 @@ from django.shortcuts import get_object_or_404
 from django.shortcuts import render
 import os
 from django.conf import settings
+from docx import Document
+from docx.shared import Pt
+from docx.enum.text import WD_ALIGN_PARAGRAPH
 # Thêm các import cho AI
 import google.generativeai as genai
 from django.conf import settings
@@ -87,38 +90,59 @@ def index(request):
 
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
-def download_pdf_view(request):
+def download_pdf_view(request): # Giữ nguyên tên hàm
     try:
-        # 1. Lấy dữ liệu
+        # 1. Lấy dữ liệu (Giống như cũ)
         hoc_vien = get_object_or_404(HocVien, user=request.user)
         de_cuong = get_object_or_404(DeCuong, hoc_vien=hoc_vien)
 
-        # 2. Tạo context (dữ liệu để điền vào template)
-        context = {
-            'hoc_vien': hoc_vien,
-            'ten_de_tai': de_cuong.ten_de_tai,
-            'ly_do_chon_de_tai': de_cuong.ly_do_chon_de_tai,
-            'khung_ly_thuyet': de_cuong.khung_ly_thuyet,
-            'thiet_ke_va_to_chuc': de_cuong.thiet_ke_va_to_chuc,
-            'thuc_nghiem': de_cuong.thuc_nghiem,
-            'font_path': f'file://{os.path.join(settings.BASE_DIR, "static", "fonts", "DejaVuSans.ttf")}',
-        }
+        # 2. Tạo tài liệu Word
+        document = Document()
 
-        # 3. Render HTML từ template
-        template = get_template('core/pdf_template.html')
-        html = template.render(context)
+        # 3. Thêm nội dung
+        # Tiêu đề
+        title = document.add_heading(de_cuong.ten_de_tai or "(Chưa có tên đề tài)", level=0)
+        title.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
-        # 4. Tạo PDF
-        result = BytesIO()
-        pdf = pisa.pisaDocument(BytesIO(html.encode("UTF-8")), result)
+        # Thông tin học viên
+        document.add_heading('Thông tin học viên', level=2)
+        p_info = document.add_paragraph()
+        p_info.add_run('Họ và tên: ').bold = True
+        p_info.add_run(hoc_vien.ho_ten)
 
-        if not pdf.err:
-            response = HttpResponse(result.getvalue(), content_type='application/pdf')
-            response['Content-Disposition'] = 'attachment; filename="DeCuongLuanVan.pdf"'
-            return response
+        p_info2 = document.add_paragraph()
+        p_info2.add_run('Ngày sinh: ').bold = True
+        p_info2.add_run(str(hoc_vien.ngay_sinh) if hoc_vien.ngay_sinh else "(Chưa cập nhật)")
+
+        p_info3 = document.add_paragraph()
+        p_info3.add_run('Quê quán: ').bold = True
+        p_info3.add_run(hoc_vien.que_quan or "(Chưa cập nhật)")
+
+        # Các chương
+        sections = [
+            ('1. Lý do chọn đề tài (Tính cấp thiết)', de_cuong.ly_do_chon_de_tai),
+            ('2. Chương 1: Khung lý thuyết', de_cuong.khung_ly_thuyet),
+            ('2. Chương 2: Thiết kế và Tổ chức', de_cuong.thiet_ke_va_to_chuc),
+            ('3. Chương 3: Thực nghiệm', de_cuong.thuc_nghiem),
+        ]
+
+        for title, content in sections:
+            document.add_heading(title, level=2)
+            document.add_paragraph(content or "(Chưa có nội dung)")
+
+        # 4. Lưu vào buffer
+        buffer = BytesIO()
+        document.save(buffer)
+        buffer.seek(0)
+
+        # 5. Tạo HttpResponse (Sửa content_type)
+        response = HttpResponse(
+            buffer.getvalue(),
+            content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        )
+        response['Content-Disposition'] = 'attachment; filename="DeCuongLuanVan.docx"'
+        return response
 
     except Exception as e:
-        print(f"Lỗi tạo PDF: {e}")
+        print(f"Lỗi tạo Word: {e}")
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-    return Response({'error': 'Lỗi tạo PDF'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

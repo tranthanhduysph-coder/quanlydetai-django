@@ -11,7 +11,11 @@ from django.shortcuts import render
 # Thêm các import cho AI
 import google.generativeai as genai
 from django.conf import settings
-
+# ... (các import hiện có)
+from django.template.loader import get_template
+from django.http import HttpResponse
+from xhtml2pdf import pisa
+from io import BytesIO
 # --- API Đăng ký ---
 @api_view(['POST'])
 def register_user(request):
@@ -78,3 +82,41 @@ def goi_y_ai(request):
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 def index(request):
     return render(request, 'core/index.html')
+# ... (sau hàm goi_y_ai)
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def download_pdf_view(request):
+    try:
+        # 1. Lấy dữ liệu
+        hoc_vien = get_object_or_404(HocVien, user=request.user)
+        de_cuong = get_object_or_404(DeCuong, hoc_vien=hoc_vien)
+
+        # 2. Tạo context (dữ liệu để điền vào template)
+        context = {
+            'hoc_vien': hoc_vien,
+            'ten_de_tai': de_cuong.ten_de_tai,
+            'ly_do_chon_de_tai': de_cuong.ly_do_chon_de_tai,
+            'khung_ly_thuyet': de_cuong.khung_ly_thuyet,
+            'thiet_ke_va_to_chuc': de_cuong.thiet_ke_va_to_chuc,
+            'thuc_nghiem': de_cuong.thuc_nghiem,
+        }
+
+        # 3. Render HTML từ template
+        template = get_template('core/pdf_template.html')
+        html = template.render(context)
+
+        # 4. Tạo PDF
+        result = BytesIO()
+        pdf = pisa.pisaDocument(BytesIO(html.encode("UTF-8")), result)
+
+        if not pdf.err:
+            response = HttpResponse(result.getvalue(), content_type='application/pdf')
+            response['Content-Disposition'] = 'attachment; filename="DeCuongLuanVan.pdf"'
+            return response
+
+    except Exception as e:
+        print(f"Lỗi tạo PDF: {e}")
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    return Response({'error': 'Lỗi tạo PDF'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Đề cương luận văn</title>
+    <style>
+        @font-face {
+            font-family: "DejaVuSans";
+            src: url("https://cdnjs.cloudflare.com/ajax/libs/dejavu-sans/2.37/dejavu-sans-webfont.woff") format("woff");
+        }
+        body {
+            font-family: "DejaVuSans", sans-serif;
+            font-size: 12pt;
+            line-height: 1.5;
+        }
+        h1 {
+            font-size: 18pt;
+            text-align: center;
+            text-transform: uppercase;
+        }
+        h2 {
+            font-size: 14pt;
+            color: #333;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 5px;
+            margin-top: 25px;
+        }
+        p {
+            text-align: justify;
+            white-space: pre-wrap; /* Giữ nguyên định dạng xuống dòng */
+        }
+    </style>
+</head>
+<body>
+    <h1>{{ ten_de_tai | default:"(Chưa có tên đề tài)" }}</h1>
+
+    <h2>Thông tin học viên</h2>
+    <p><strong>Họ và tên:</strong> {{ hoc_vien.ho_ten }}</p>
+    <p><strong>Ngày sinh:</strong> {{ hoc_vien.ngay_sinh | default:"(Chưa cập nhật)" }}</p>
+    <p><strong>Quê quán:</strong> {{ hoc_vien.que_quan | default:"(Chưa cập nhật)" }}</p>
+
+    <h2>1. Lý do chọn đề tài (Tính cấp thiết)</h2>
+    <p>{{ ly_do_chon_de_tai | default:"(Chưa có nội dung)" }}</p>
+
+    <h2>2. Chương 1: Khung lý thuyết</h2>
+    <p>{{ khung_ly_thuyet | default:"(Chưa có nội dung)" }}</p>
+
+    <h2>3. Chương 2: Thiết kế và Tổ chức</h2>
+    <p>{{ thiet_ke_va_to_chuc | default:"(Chưa có nội dung)" }}</p>
+
+    <h2>4. Chương 3: Thực nghiệm</h2>
+    <p>{{ thuc_nghiem | default:"(Chưa có nội dung)" }}</p>
+
+</body>
+</html>

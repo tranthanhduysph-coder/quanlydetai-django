@@ -8,3 +8,4 @@ djangorestframework-simplejwt
 google-generativeai
 python-dotenv
 xhtml2pdf
+whitenoise
